@@ -1,0 +1,13 @@
+
+BROKER_HOST = "94.23.52.124"
+ 
+BROKER_PORT = 5672
+BROKER_USER = "celmquser"
+BROKER_PASSWORD = "celmq4rox"
+ 
+BROKER_VHOST = "celmqvhost"
+
+CELERY_RESULT_BACKEND = "amqp"
+
+CELERY_IMPORTS = ("p4lib", )
+
