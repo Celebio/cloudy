@@ -6,7 +6,7 @@ import time
 
 
 resAtt = [0]
-result = f.delay([], g1, 12, resAtt)
+result = f.delay([], g1, 50, resAtt)
 
 #result = chord(add.subtask((i, i)) for i in xrange(100))(tsum.subtask()).get()
 
@@ -16,10 +16,10 @@ result = f.delay([], g1, 12, resAtt)
 
 result.ready()
 print result.result
-print resAtt[0]
+#print resAtt[0]
 time.sleep(10)
 print result.ready()
 print result.result
-print resAtt[0]
+#print resAtt[0]
 
 
