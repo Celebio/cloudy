@@ -1,20 +1,25 @@
 #!/usr/bin/env python
 from celery.task import chord
-from p4lib import add, tsum
+from p4lib import *
 
 import time
 
 
-result = chord(add.subtask((i, i)) for i in xrange(100))(tsum.subtask()).get()
+resAtt = [0]
+result = f.delay([], g1, 12, resAtt)
+
+#result = chord(add.subtask((i, i)) for i in xrange(100))(tsum.subtask()).get()
 
 #result = add.delay(4,4)
 
-print result
+#print result
 
-#result.ready()
-#print result.result
-#time.sleep(10)
-#print result.ready()
-#print result.result
+result.ready()
+print result.result
+print resAtt[0]
+time.sleep(10)
+print result.ready()
+print result.result
+print resAtt[0]
 
 

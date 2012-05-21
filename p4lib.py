@@ -23,9 +23,8 @@ def fact(n, callback=None):
     pass
     
 
-@task(ignore_result=True)
 def g1(res, resAtt):
-    resAtt[0] = res
+    #resAtt[0] = res
     print res
 
 @task(ignore_result=True)
