@@ -22,7 +22,7 @@ def bAdd(x, y, callback=None):
 def fact(n, callback=None):
     pass
     
-
+@task()
 def g1(res, resAtt):
     #resAtt[0] = res
     print res
