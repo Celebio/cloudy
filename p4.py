@@ -188,7 +188,7 @@ def think2(board, level, curPlayer, bestAction):
     
 
 def think(board, level, curPlayer):
-    if level == 5:
+    if level == 7:
         return (0, -1)
     
     #print "considering board;"
