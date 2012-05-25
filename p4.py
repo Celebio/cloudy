@@ -182,7 +182,7 @@ def think2(board, level, curPlayer, bestAction):
     
 
 def think(board, level, curPlayer):
-    if level == 4:
+    if level == 5:
         return (0, -1)
     
     #print "considering board;"
@@ -258,13 +258,14 @@ def interactivePlay():
         if curPlayer == 1:
             cse = inputAction()
         else:
-            maxValue, cse = think(gBoard, 0, curPlayer)
-            print "think best:"
-            print maxValue, cse
+            #maxValue, cse = think(gBoard, 0, curPlayer)
+            #print "think best:"
+            #print maxValue, cse
             
             dMaxValue, dcse = distributedThink(gBoard, 0, curPlayer)
             print "distributed think best:"
             print dMaxValue, dcse
+            maxValue, cse = dMaxValue, dcse
             
             
         while playToBoard(gBoard, cse, curPlayer) == -1:
