@@ -5,9 +5,15 @@ import copy
 from p4lib import *
 from celery.task import chord
 from celery.task.sets import TaskSet
+import celeryconfig
+
+import string
+from random import *
+
+
 
 gBoard = None
-
+channel = None
 
 def createBoard():
     board = []
@@ -220,32 +226,142 @@ def think(board, level, curPlayer):
 def distributedThink(board, level, curPlayer):
     callback = getBest.subtask()
     header = []
+    queueName = "hellp"
+    nodeId = randomQueueName()
+    collectingNode = CollectingNode(queueName, nodeId)
+
+    #queueName = "hello"
     for j in range(0, 7):
         
         fallLine = playToBoard(board, j, curPlayer)
         if fallLine != -1:
-            winner = isGameFinished(board)
-            if winner == curPlayer:
-                setBoardElem(board, fallLine, j, 0)
-                return (10000, j)
-            elif winner == 3 - curPlayer:
-                setBoardElem(board, fallLine, j, 0)
-                return (-10000, j)
+            #winner = isGameFinished(board)
+            #if winner == curPlayer:
+            #    setBoardElem(board, fallLine, j, 0)
+            #    print "this case"
+            #    return (10000, j)
+            #elif winner == 3 - curPlayer:
+            #    setBoardElem(board, fallLine, j, 0)
+            #    print "this case oh"
+            #    return (-10000, j)
             
-            header.append(thinkAsync.subtask((copy.copy(board), level+1, 3 - curPlayer, j)))
+            thinkAsync.delay(copy.copy(board), level+1, 3 - curPlayer, j, queueName, nodeId)
             setBoardElem(board, fallLine, j, 0)
     
     #job = TaskSet(tasks=header)
     #result = job.apply_async()
     
-    result = chord(header)(callback)
-    maxValue, bestAction = result.get()
+    
+    collectingNode.waitForMessages()
+    print collectingNode.result
+    
+    return collectingNode.result
+    
+    #result = chord(header)(callback)
+    #maxValue, bestAction = result.get()
     #print "distributedThink:"
     #print maxValue, bestAction
-    return maxValue, bestAction
+    #return maxValue, bestAction
+
+
+
+class BrokerCallback: 
+    
+    def __init__(self, queueName, nodeId):
+        self.queueName = queueName
+        self.nodeId = nodeId
+        self.result = [None, None, None, None, None, None, None]
+        self.ctr = 0
+
+    def _computeBest(self, ch):
+        maxValue = float("-inf")
+        localBestAction = 0
+        print "getting best"
+        print self.result
+        #print "actions:"
+        for j in range(0, len(self.result)):
+            act = self.result[j]
+            
+            if not act:
+                print "HEEEYYYYYYYYY"
+            else:
+                act[0] = -act[0]
+                #bAct = (-act[0], act[1], act[2])
+                if act[0] > maxValue:
+                    maxValue = act[0]
+                    localBestAction = j
+        #print "getBest"
+        #print maxValue, localBestAction
+        self.bResult = (maxValue, localBestAction)
+        ch.stop_consuming()
+        
+    def __call__(self, ch, method, properties, body): 
+        print " [x] Received %r" % (body,)
+        #self.result = body
+        vals = cjson.decode(body)
+        print vals
+        maxValue, localBestAction, ichBin, recNodeId = vals
+        #print "%d" % ichBin
+        
+        self.result[ichBin] = vals
+        self.ctr += 1
+        if self.ctr == 7:
+            self._computeBest(ch)
+
+
+
+class CollectingNode:
+    def __init__(self, queueName, nodeId):
+        
+        self.nodeId = nodeId
+        self.queueName = queueName  #"hello"    #self._randomQueueName()
+        credentials = pika.PlainCredentials(celeryconfig.BROKER_USER, celeryconfig.BROKER_PASSWORD)
+        connection = pika.BlockingConnection(pika.ConnectionParameters(
+            credentials=credentials,
+            host=celeryconfig.BROKER_HOST,
+            virtual_host=celeryconfig.BROKER_VHOST
+        ))
+        channel = connection.channel()
+        try:
+            channel.queue_delete(queue=self.queueName)
+        except:
+            pass
+        
+        self.channel = channel
+        self.connection = connection
+        print 1
+        
+    def waitForMessages(self):
+        channel = self.channel
+        connection = self.connection
+        queueName = self.queueName
+        channel.queue_declare(queue=self.queueName)
+        print ' [*] Waiting for messages. To exit press CTRL+C queueName = %s' % queueName
+        brokerCallback = BrokerCallback(self.queueName, self.nodeId)
+        channel.basic_consume(brokerCallback,
+                              queue=self.queueName,
+                              no_ack=True)
+        channel.start_consuming()
+        connection.close()
+        print "continuing.."
+        self.result =  brokerCallback.bResult
+        
+
+def randomQueueName():
+    chars = string.ascii_letters    # + string.digits
+    return "".join(choice(chars) for x in range(randint(8, 10)))
+        
+        
+    
+    
+#def brokerCallback(ch, method, properties, body):
+#    global channel
+#    print " [x] Received %r" % (body,)
+#    channel.stop_consuming()
 
 def interactivePlay():
     global gBoard
+    global channel
     
     curPlayer = 1
     whoWon = 0
@@ -262,6 +378,11 @@ def interactivePlay():
             #print "think best:"
             #print maxValue, cse
             
+            
+            #collectingNode = CollectingNode()
+            
+            #print "go on..."
+            #print collectingNode.result
             dMaxValue, dcse = distributedThink(gBoard, 0, curPlayer)
             print "distributed think best:"
             print dMaxValue, dcse

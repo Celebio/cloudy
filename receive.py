@@ -2,7 +2,6 @@
 import pika
 
 credentials = pika.PlainCredentials('celmquser', 'celmq4rox')
-
 connection = pika.BlockingConnection(pika.ConnectionParameters(
     credentials=credentials,
     host='94.23.52.124',
@@ -20,6 +19,5 @@ def callback(ch, method, properties, body):
 channel.basic_consume(callback,
                       queue='hello',
                       no_ack=True)
-
 channel.start_consuming()
 

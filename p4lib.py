@@ -3,7 +3,9 @@ from celery.task import task, Task
 from celery.task.sets import subtask
 from celery import registry
 
+import celeryconfig
 import pika
+import cjson
 
 
 @task
@@ -150,12 +152,35 @@ def getBest(actions):
     return (maxValue, localBestAction)
     
 
-@task()
-def thinkAsync(board, level, curPlayer, ichBin):
-    print "received board;"
+
+@task(ignore_result=True)
+def sendThat(maxValue, localBestAction, ichBin, queueName, nodeId):
+    credentials = pika.PlainCredentials(celeryconfig.BROKER_USER, celeryconfig.BROKER_PASSWORD)
+    connection = pika.BlockingConnection(pika.ConnectionParameters(
+        credentials=credentials,
+        host=celeryconfig.BROKER_HOST,
+        virtual_host=celeryconfig.BROKER_VHOST
+    ))
+    channel = connection.channel()
+
+    channel.queue_declare(queue=queueName)
+
+    bodyText = cjson.encode((maxValue, localBestAction, ichBin, nodeId))
+    channel.basic_publish(exchange='',
+                          routing_key=queueName,
+                          body=bodyText)
+    print " [x] Sent '%s' to queue %s" % (bodyText, queueName)
+    connection.close()
+
+
+@task(ignore_result=True)
+def thinkAsync(board, level, curPlayer, ichBin, queueName, nodeId):
+    print "received board; %d" % ichBin
     drawBoard(board)
-    if level == 5:
-        return (0, -1)
+
+    #if level == 5:
+    #    sendThat(0, 0, ichBin, queueName)
+    #    #return (0, -1)
 
     maxValue = float("-inf")
     localBestAction = 0
@@ -165,21 +190,27 @@ def thinkAsync(board, level, curPlayer, ichBin):
         fallLine = playToBoard(board, j, curPlayer)
         if fallLine != -1:
             winner = isGameFinished(board)
+            bValue = float("-inf")
             if winner == curPlayer:
-                setBoardElem(board, fallLine, j, 0)
-                return (10000, j, ichBin)
+                bValue, bestAction = 10000, j
+                #setBoardElem(board, fallLine, j, 0)
+                #sendThat.delay(10000, j, ichBin, queueName, nodeId)
+                #return (10000, j, ichBin)
             elif winner == 3 - curPlayer:
-                setBoardElem(board, fallLine, j, 0)
-                return (-10000, j, ichBin)
-
-            bValue, bestAction = think(board, level+1, 3 - curPlayer)
-            bValue = -bValue
+                bValue, bestAction = -10000, j
+                #setBoardElem(board, fallLine, j, 0)
+                #sendThat.delay(-10000, j, ichBin, queueName, nodeId)
+                #return (-10000, j, ichBin)
+            else:
+                bValue, bestAction = think(board, level+1, 3 - curPlayer)
+                bValue = -bValue
             setBoardElem(board, fallLine, j, 0)
             if bValue > maxValue:
                 maxValue = bValue
                 localBestAction = j
 
-    return (maxValue, localBestAction, ichBin)
+    sendThat.delay(maxValue, localBestAction, ichBin, queueName, nodeId)
+    #return (maxValue, localBestAction, ichBin)
 
 
 

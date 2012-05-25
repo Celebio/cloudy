@@ -2,7 +2,6 @@
 import pika
 
 credentials = pika.PlainCredentials('celmquser', 'celmq4rox')
-
 connection = pika.BlockingConnection(pika.ConnectionParameters(
     credentials=credentials,
     host='94.23.52.124',
