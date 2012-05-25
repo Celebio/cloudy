@@ -127,7 +127,7 @@ def fibo(cbs, x):
 
 
 
-from p4 import playToBoard, setBoardElem, think, isGameFinished
+from p4 import playToBoard, setBoardElem, think, isGameFinished, drawBoard
 
 
 
@@ -135,16 +135,25 @@ from p4 import playToBoard, setBoardElem, think, isGameFinished
 def getBest(actions):
     maxValue = float("-inf")
     localBestAction = 0
-    for j in range(len(actions)):
+    print "actions:"
+    for j in range(0, len(actions)):
         act = actions[j]
-        if act[0] > maxValue:
-            maxValue = act[0]
+        bAct = (-act[0], act[1], act[2])
+        print bAct
+        print j
+        if bAct[0] > maxValue:
+            print "maxvalue"
+            maxValue = bAct[0]
             localBestAction = j
+    print "getBest"
+    print maxValue, localBestAction
     return (maxValue, localBestAction)
     
 
 @task()
-def thinkAsync(board, level, curPlayer):
+def thinkAsync(board, level, curPlayer, ichBin):
+    print "received board;"
+    drawBoard(board)
     if level == 5:
         return (0, -1)
 
@@ -158,10 +167,10 @@ def thinkAsync(board, level, curPlayer):
             winner = isGameFinished(board)
             if winner == curPlayer:
                 setBoardElem(board, fallLine, j, 0)
-                return (1000, j)
+                return (10000, j, ichBin)
             elif winner == 3 - curPlayer:
                 setBoardElem(board, fallLine, j, 0)
-                return (-1000, j)
+                return (-10000, j, ichBin)
 
             bValue, bestAction = think(board, level+1, 3 - curPlayer)
             bValue = -bValue
@@ -170,7 +179,7 @@ def thinkAsync(board, level, curPlayer):
                 maxValue = bValue
                 localBestAction = j
 
-    return (maxValue, localBestAction)
+    return (maxValue, localBestAction, ichBin)
 
 
 

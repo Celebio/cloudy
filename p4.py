@@ -26,34 +26,38 @@ def setBoardElem(board, i, j, elem):
 
 
 def drawBoard(board):
-    sys.stdout.write(" 1234567 \n")
-    sys.stdout.write("/-------\\\n")
+    bStr = ""
+    bStr += (" 1234567 \n")
+    bStr += ("/-------\\\n")
     for i in range(0,7):
-        sys.stdout.write("|")
+        bStr += ("|")
         for j in range(0,7):
             bElem = getBoardElem(board, i, j)
             if bElem == 0:
-                sys.stdout.write(" ")
+                bStr += (" ")
             elif bElem == 1:
-                sys.stdout.write("O")
+                bStr += ("O")
             elif bElem == 2:
-                sys.stdout.write("X")
-        sys.stdout.write("|\n")
-    sys.stdout.write("\\-------/\n")
+                bStr += ("X")
+        bStr += ("|\n")
+    bStr += ("\\-------/\n")
+    print bStr
     displayBoardState(board)
 
 
 def displayBoardState(board):
+    bStr = ""
     for i in range(0,7):
         for j in range(0,7):
             bElem = getBoardElem(board, i, j)
             if bElem == 0:
-                sys.stdout.write("0")
+                bStr += ("0")
             elif bElem == 1:
-                sys.stdout.write("1")
+                bStr += ("1")
             elif bElem == 2:
-                sys.stdout.write("2")
-    sys.stdout.write("\n")
+                bStr += ("2")
+    bStr += ("\n")
+    print bStr
     
 def createBoardFromString(bStr):
     board = []
@@ -153,7 +157,7 @@ def think2(board, level, curPlayer, bestAction):
         return (-1000, bestAction)
     
     
-    if level == 5:
+    if level == 4:
         return (0, bestAction)
     
     maxValue = float("-inf")
@@ -178,26 +182,32 @@ def think2(board, level, curPlayer, bestAction):
     
 
 def think(board, level, curPlayer):
-    if level == 5:
+    if level == 4:
         return (0, -1)
+    
+    #print "considering board;"
+    #drawBoard(board)
     
     maxValue = float("-inf")
     localBestAction = 0
-    winningBoard = None
+    
+    if level == 0:
+        print "think"
     
     for j in range(0, 7):
         fallLine = playToBoard(board, j, curPlayer)
         if fallLine != -1:
             winner = isGameFinished(board)
             if winner == curPlayer:
-                setBoardElem(board, fallLine, j, 0)
-                return (1000, j)
+                bValue, bestAction = 10000, j
             elif winner == 3 - curPlayer:
-                setBoardElem(board, fallLine, j, 0)
-                return (-1000, j)
-            
-            bValue, bestAction = think(board, level+1, 3 - curPlayer)
-            bValue = -bValue
+                bValue, bestAction = -10000, j
+            else:
+                bValue, bestAction = think(copy.copy(board), level+1, 3 - curPlayer)
+                bValue = -bValue
+
+            if level == 0:
+                print bValue, j
             setBoardElem(board, fallLine, j, 0)
             if bValue > maxValue:
                 maxValue = bValue
@@ -217,21 +227,22 @@ def distributedThink(board, level, curPlayer):
             winner = isGameFinished(board)
             if winner == curPlayer:
                 setBoardElem(board, fallLine, j, 0)
-                return (1000, j)
+                return (10000, j)
             elif winner == 3 - curPlayer:
                 setBoardElem(board, fallLine, j, 0)
-                return (-1000, j)
+                return (-10000, j)
             
-            localBoard = copy.copy(board)
+            header.append(thinkAsync.subtask((copy.copy(board), level+1, 3 - curPlayer, j)))
             setBoardElem(board, fallLine, j, 0)
-            header.append(thinkAsync.subtask((localBoard, level+1, 3 - curPlayer)))
     
     #job = TaskSet(tasks=header)
     #result = job.apply_async()
     
     result = chord(header)(callback)
-    return result.get()
-
+    maxValue, bestAction = result.get()
+    #print "distributedThink:"
+    #print maxValue, bestAction
+    return maxValue, bestAction
 
 def interactivePlay():
     global gBoard
@@ -247,7 +258,14 @@ def interactivePlay():
         if curPlayer == 1:
             cse = inputAction()
         else:
-            maxValue, cse = distributedThink(gBoard, 0, curPlayer)
+            maxValue, cse = think(gBoard, 0, curPlayer)
+            print "think best:"
+            print maxValue, cse
+            
+            dMaxValue, dcse = distributedThink(gBoard, 0, curPlayer)
+            print "distributed think best:"
+            print dMaxValue, dcse
+            
             
         while playToBoard(gBoard, cse, curPlayer) == -1:
             drawBoard(gBoard)
