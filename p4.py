@@ -188,11 +188,11 @@ def think2(board, level, curPlayer, bestAction):
     
 
 def think(board, level, curPlayer):
-    if level == 5:
+    if level == 4:
         return (0, -1)
     
-    #print "considering board;"
-    #drawBoard(board)
+    print "considering board;"
+    drawBoard(board)
     
     maxValue = float("-inf")
     localBestAction = 0
@@ -351,22 +351,24 @@ def interactivePlay():
         print "Its your turn %d" % curPlayer
         drawBoard(gBoard)
         
-        if curPlayer == 1:
-            cse = inputAction()
-        else:
-            #maxValue, cse = think(gBoard, 0, curPlayer)
-            #print "think best:"
-            #print maxValue, cse
+        cse = inputAction()
+        
+        #if curPlayer == 1:
+        #    cse = inputAction()
+        #else:
+        #    maxValue, cse = think(gBoard, 0, curPlayer)
+        #    print "think best:"
+        #    print maxValue, cse
             
             
             #collectingNode = CollectingNode()
             
             #print "go on..."
             #print collectingNode.result
-            dMaxValue, dcse = distributedThink(gBoard, 0, curPlayer)
-            print "distributed think best:"
-            print dMaxValue, dcse
-            maxValue, cse = dMaxValue, dcse
+            #dMaxValue, dcse = distributedThink(gBoard, 0, curPlayer)
+            #print "distributed think best:"
+            #print dMaxValue, dcse
+            #maxValue, cse = dMaxValue, dcse
             
             
         while playToBoard(gBoard, cse, curPlayer) == -1:
