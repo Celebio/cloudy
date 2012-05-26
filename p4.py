@@ -188,7 +188,7 @@ def think2(board, level, curPlayer, bestAction):
     
 
 def think(board, level, curPlayer):
-    if level == 7:
+    if level == 5:
         return (0, -1)
     
     #print "considering board;"
@@ -230,38 +230,18 @@ def distributedThink(board, level, curPlayer):
     nodeId = randomQueueName()
     collectingNode = CollectingNode(queueName, nodeId)
 
-    #queueName = "hello"
     for j in range(0, 7):
         
         fallLine = playToBoard(board, j, curPlayer)
         if fallLine != -1:
-            #winner = isGameFinished(board)
-            #if winner == curPlayer:
-            #    setBoardElem(board, fallLine, j, 0)
-            #    print "this case"
-            #    return (10000, j)
-            #elif winner == 3 - curPlayer:
-            #    setBoardElem(board, fallLine, j, 0)
-            #    print "this case oh"
-            #    return (-10000, j)
-            
             thinkAsync.delay(copy.copy(board), level+1, 3 - curPlayer, j, queueName, nodeId)
             setBoardElem(board, fallLine, j, 0)
-    
-    #job = TaskSet(tasks=header)
-    #result = job.apply_async()
     
     
     collectingNode.waitForMessages()
     print collectingNode.result
     
     return collectingNode.result
-    
-    #result = chord(header)(callback)
-    #maxValue, bestAction = result.get()
-    #print "distributedThink:"
-    #print maxValue, bestAction
-    #return maxValue, bestAction
 
 
 
