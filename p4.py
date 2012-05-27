@@ -351,24 +351,24 @@ def interactivePlay():
         print "Its your turn %d" % curPlayer
         drawBoard(gBoard)
         
-        cse = inputAction()
+        #cse = inputAction()
         
-        #if curPlayer == 1:
-        #    cse = inputAction()
-        #else:
-        #    maxValue, cse = think(gBoard, 0, curPlayer)
-        #    print "think best:"
-        #    print maxValue, cse
+        if curPlayer == 1:
+            cse = inputAction()
+        else:
+            #maxValue, cse = think(gBoard, 0, curPlayer)
+            #print "think best:"
+            #print maxValue, cse
             
             
             #collectingNode = CollectingNode()
             
             #print "go on..."
             #print collectingNode.result
-            #dMaxValue, dcse = distributedThink(gBoard, 0, curPlayer)
-            #print "distributed think best:"
-            #print dMaxValue, dcse
-            #maxValue, cse = dMaxValue, dcse
+            dMaxValue, dcse = distributedThink(gBoard, 0, curPlayer)
+            print "distributed think best:"
+            print dMaxValue, dcse
+            maxValue, cse = dMaxValue, dcse
             
             
         while playToBoard(gBoard, cse, curPlayer) == -1:
